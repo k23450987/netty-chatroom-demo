@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>聊啊！！！！！</title>
+</head>
+<body>
+<h1>聊啊！！！！！</h1>
+<div>
+    <span>聊天室IP地址<input type="text" id="serverIp" value="127.0.0.1"></span><br/>
+    <span>聊天室端口号<input type="text" id="serverPort" value="8080"></span><br/>
+    <span>用户名<input type="text" id="username"></span><br/>
+    <span><a href="###" onclick="login()">登陆</a></span>
+    <span id="loginResult"></span>
+</div>
+<input type="text" id="sendTxt">
+<button id="sendBtn" onclick="chatGroup()">群发，就是谁都能看见！！！！</button>
+<div style="margin-top: 200px">
+    <a href="###" onclick="getOnlineUser()">看看谁在线</a>，输入文字，然后点击跟他聊
+    <div id="onlineUser"></div>
+</div>
+<div style="margin-top: 200px">
+    <div>聊天记录</div>
+    <div id="recv"></div>
+</div>
+</body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script>
+    var ip;
+    var port;
+    var ws;
+    var username;
+    var chatName;
+    var loginFlag;
+    var loginPath;
+    var wsPath;
+
+    function login() {
+        ip = $("#serverIp").val();
+        port = $("#serverPort").val();
+        loginPath = "http://" + ip + ":" + port;
+        wsPath = "ws://" + ip + ":" + port;
+        username = $("#username").val();
+        $.ajax({
+            type: "GET",
+            url: loginPath + "/login",
+            data: "username=" + username,
+            dataType: "json",
+            success: function (msg) {
+                console.log("get login ...");
+                console.log(msg);
+                $("#loginResult").empty();
+                if (msg.result) {
+                    loginFlag = true;
+                    $("#loginResult").append("登陆成功");
+                    chatName = msg.chatName;
+                    webSocketStart(username, chatName);
+                } else {
+                    $("#loginResult").append("登陆失败");
+                }
+            }
+        });
+    }
+
+    function getOnlineUser() {
+        if (!loginFlag) {
+            alert("你还没有登陆啊！");
+            return;
+        }
+        $.ajax({
+            type: "GET",
+            url: loginPath + "/onlineUser",
+            dataType: "json",
+            success: function (msg) {
+                console.log("get onlineUser ...");
+                console.log(msg);
+                $("#onlineUser").empty();
+                if (msg.result) {
+                    var online = msg.online;
+                    for (var i in online) {
+                        $("#onlineUser").append("<div>");
+                        $("#onlineUser").append("<a href='###' title='点击跟他唠' onclick='chatTo(\"" + online[i].channelId
+                                + "\")'>" + online[i].chatName + "</a>");
+                        $("#onlineUser").append("</div>");
+                    }
+                }
+            }
+        });
+    }
+
+    function webSocketStart(aaa, bbb) {
+        ws = new WebSocket(wsPath + "/websocket?userId=" + aaa + "&chatName=" + bbb);
+
+        ws.onopen = function (evt) {
+            console.log("Connection open ...");
+            alert("Hello " + chatName + "!");
+        };
+
+        ws.onmessage = function (evt) {
+            $("#recv").append(evt.data);
+        };
+
+        ws.onclose = function (evt) {
+            loginFlag = false;
+            $("#loginResult").empty().append("已经断线了！！！");
+        };
+    }
+
+    function getMsgObj(type, channelId) {
+        // type 1：单聊 2：群聊
+        var obj = {};
+        switch (type) {
+            case 1:
+                obj["type"] = "normal";
+                obj["channelId"] = channelId;
+                return obj;
+            case 2:
+                obj["type"] = "group";
+                obj["channelId"] = "";
+                return obj;
+            default:
+                return null;
+        }
+
+    }
+
+    function chatTo(channelId) {
+        if (!loginFlag) {
+            alert("你还没有登陆啊！");
+            return;
+        }
+        webSocketSend(getMsgObj(1, channelId));
+    }
+
+    function chatGroup() {
+        if (!loginFlag) {
+            alert("你还没有登陆啊！");
+            return;
+        }
+        webSocketSend(getMsgObj(2));
+    }
+    
+    function getDate() {
+        var now = new Date();
+
+        var year = now.getFullYear();       //年
+        var month = now.getMonth() + 1;     //月
+        var day = now.getDate();            //日
+
+        var hh = now.getHours();            //时
+        var mm = now.getMinutes();          //分
+        return year + "-" + month + "-" + day + " " + hh + ":" + mm;
+    }
+
+    function webSocketSend(msgObj) {
+        if (!loginFlag) {
+            alert("你还没有登陆啊！");
+            return;
+        }
+        msgObj["message"] = $("#sendTxt").val();
+        console.log(msgObj);
+        var jsonMsg = JSON.stringify(msgObj);
+        ws.send(jsonMsg);
+//        $("#recv").append("<div style='color: red'>" + getDate() + " 你:</div><div style='color: forestgreen'>" + msgObj.message + "</div>");
+    }
+
+</script>
+</html>
