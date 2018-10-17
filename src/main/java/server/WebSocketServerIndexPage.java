@@ -18,6 +18,8 @@ package server;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.CharsetUtil;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 /**
  * Generates the demo HTML page which is served at http://localhost:8080/
@@ -75,5 +77,12 @@ public final class WebSocketServerIndexPage {
 
     private WebSocketServerIndexPage() {
         // Unused
+    }
+
+    public static ByteBuf getHtmlContent(String htmlFileName) throws Exception {
+        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        htmlFileName = htmlFileName.replaceAll("/", "");
+        byte[] bytes = Files.readAllBytes(Paths.get(loader.getResource(htmlFileName).toURI()));
+        return Unpooled.copiedBuffer(bytes);
     }
 }

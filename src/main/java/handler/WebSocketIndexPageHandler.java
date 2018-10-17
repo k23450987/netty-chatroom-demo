@@ -136,6 +136,17 @@ public class WebSocketIndexPageHandler extends SimpleChannelInboundHandler<FullH
             res.headers().set(ACCESS_CONTROL_ALLOW_METHODS, "GET, POST, PUT,DELETE");
             HttpUtil.setContentLength(res, content.readableBytes());
             sendHttpResponse(ctx, req, res);
+        } else if (path.contains(".html")) {
+            try {
+                ByteBuf content = WebSocketServerIndexPage.getHtmlContent(path);
+                FullHttpResponse res = new DefaultFullHttpResponse(HTTP_1_1, OK, content);
+
+                res.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/html; charset=UTF-8");
+                HttpUtil.setContentLength(res, content.readableBytes());
+                sendHttpResponse(ctx, req, res);
+            } catch (Exception e) {
+                sendHttpResponse(ctx, req, new DefaultFullHttpResponse(HTTP_1_1, NOT_FOUND));
+            }
         } else {
             sendHttpResponse(ctx, req, new DefaultFullHttpResponse(HTTP_1_1, NOT_FOUND));
         }
