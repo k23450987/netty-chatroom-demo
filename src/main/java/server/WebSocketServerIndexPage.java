@@ -81,7 +81,7 @@ public final class WebSocketServerIndexPage {
 
     public static ByteBuf getHtmlContent(String htmlFileName) throws Exception {
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
-        htmlFileName = htmlFileName.replaceAll("/", "");
+        htmlFileName = "html" + htmlFileName;
         byte[] bytes = Files.readAllBytes(Paths.get(loader.getResource(htmlFileName).toURI()));
         return Unpooled.copiedBuffer(bytes);
     }
